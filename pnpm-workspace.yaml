@@ -1,0 +1,12 @@
+# Tiempo mínimo (en minutos) que debe tener una versión publicada antes de instalarla
+# 10080 = 7 días. Protege contra paquetes recién comprometidos.
+minimumReleaseAge: 10080
+
+# Modo estricto: bloquea (no solo retrasa) si una versión no cumple la antigüedad
+minimumReleaseAgeStrict: true
+
+# Excepciones: paquetes que pueden saltarse el cooldown
+minimumReleaseAgeExclude: []
+allowBuilds:
+  '@tailwindcss/oxide': true
+  esbuild: true

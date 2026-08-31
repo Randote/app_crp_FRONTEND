@@ -1,0 +1,133 @@
+/* --- Elementos del Diagrama --- */
+.ishikawa-contenedor {
+    font-family: var(--font-ui);
+}
+
+.ishikawa-titulo {
+    font-size: 13px;
+    font-weight: 600;
+    color: #FFFFFF;
+    background: var(--bg-rojito);
+    padding: 8px;
+    text-align: center;
+    border: 0.5px solid var(--border-medium);
+    border-radius: var(--radius-sm);
+    letter-spacing: 0.02em;
+}
+
+.ishikawa-numero {
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+    text-align: center;
+    font-family: var(--font-code);
+    font-size: 12px;
+    font-weight: 700;
+    border-radius: var(--radius-sm);
+    border: 0.5px solid var(--border-medium);
+    background: var(--bg-input-dis);
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all var(--transition);
+    outline: none;
+}
+
+.ishikawa-numero:hover {
+    border-color: var(--accent);
+}
+
+.ishikawa-numero:focus {
+    border-color: var(--border-focus);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--border-focus) 12%, transparent);
+}
+
+.ishikawa-numero--activo {
+    background: var(--accent);
+    color: #FFFFFF;
+    border-color: var(--accent);
+}
+
+.ishikawa-input-causa {
+    /* Mantiene consistencia visual si no dependes solo de Tailwind global */
+    font-family: var(--font-ui);
+    font-size: 13px;
+    color: var(--text-primary);
+}
+
+.ishikawa-texto-vacio {
+    color: var(--text-hint);
+}
+
+/* --- Botones --- */
+.ishikawa-btn-eliminar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-sm);
+    color: var(--text-hint);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: all var(--transition);
+}
+
+.ishikawa-btn-eliminar:hover {
+    color: var(--text-error);
+    background: color-mix(in srgb, var(--border-error) 10%, transparent);
+}
+
+.ishikawa-btn-agregar {
+    font-family: var(--font-ui);
+    color: var(--accent);
+    border: 1px dashed var(--border-medium);
+    border-radius: var(--radius-md);
+    padding: 7px 0;
+    font-size: 13px;
+    font-weight: 500;
+    background: transparent;
+    cursor: pointer;
+    transition: all var(--transition);
+    width: 8rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+}
+
+.ishikawa-btn-agregar:hover {
+    background: var(--bg-input-dis);
+    border-color: var(--accent);
+}
+
+.ishikawa-btn-guardar {
+    font-family: var(--font-ui);
+    background: #8B1A2A;
+    /* Color vino original */
+    color: #FFFFFF;
+    padding: 10px 24px;
+    border-radius: var(--radius-md);
+    font-size: 13px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: all var(--transition);
+}
+
+.ishikawa-btn-guardar:hover {
+    background: color-mix(in srgb, #8B1A2A 80%, black);
+}
+
+.ishikawa-btn-guardar:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Media query para adaptar el botón de guardar como lo tenías en Tailwind */
+@media (min-width: 768px) {
+    .ishikawa-btn-guardar {
+        padding: 12px 32px;
+        font-size: 16px;
+    }
+}
