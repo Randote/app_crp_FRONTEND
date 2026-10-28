@@ -44,12 +44,13 @@
     });
 
     let passwordValida = $derived(passwordChecks.every((c) => c.ok));
-
-    let usuarioRed = $derived(
-        form.nombre && form.apellido
-            ? `${form.nombre.toLowerCase().trim()}_${form.apellido.toLowerCase().trim()}`
-            : ''
-    );
+    
+let usuarioRed = $derived.by(() => {
+        if (!form.nombre || !form.apellido) return '';
+        const primerNombre = form.nombre.trim().split(/\s+/)[0].toLowerCase();
+        const primerApellido = form.apellido.trim().split(/\s+/)[0].toLowerCase();
+        return `${primerNombre}_${primerApellido}`;
+    });
 
     let loading = $state(false);
 
@@ -246,10 +247,10 @@ async function confirmarRegistro() {
             </div>
         </div>
 
-        <div class="form-section shadow-sm" style="background:var(--bg-input-dis); border-radius:var(--radius-lg);
+        <!-- <div class="form-section shadow-sm" style="background:var(--bg-input-dis); border-radius:var(--radius-lg);
             padding:20px; border:0.5px solid var(--border-subtle); margin-bottom: 20px;">
             <p style="font-size:11px; font-weight:700; letter-spacing:0.05em; text-transform:uppercase;
-                color:var(--text-hint); margin:0 0 16px;">Permisos requeridos de planta</p>
+                color:var(--text-hint); margin:0 0 16px;">Permisos</p>
             
             <div class="permisos-grid">
                 <label class="permiso-card" class:active={form.permisos.noConformidades}>
@@ -304,7 +305,7 @@ async function confirmarRegistro() {
                     </div>
                 </label>
             </div>
-        </div>
+        </div> -->
 
         <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
             <a href="{base}/Inicio" class="btn-secundario" style="flex: 0 0 auto;">← Atrás</a>

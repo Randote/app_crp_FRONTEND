@@ -4,6 +4,7 @@
   import { BarChart } from 'echarts/charts';
   import { GridComponent, TooltipComponent } from 'echarts/components';
   import { CanvasRenderer } from 'echarts/renderers';
+    import FormSection from '$lib/components/FormSection.svelte';
 
   echarts.use([BarChart, GridComponent, TooltipComponent, CanvasRenderer]);
 
@@ -97,10 +98,9 @@
   });
 </script>
 
-<div class="relative bg-white border border-[#E4DFD6] rounded-[14px] p-5 overflow-hidden">  
-  <h3 class="font-[var(--font-ui)] text-lg font-semibold text-[var(--text-primary)] mb-4">
-    Origen de Detección
-  </h3>
+<FormSection title="Origen de Detección">
+    <div bind:this={chartEl} style="width: 100%; height: 280px;"></div>
+</FormSection>
 
-  <div bind:this={chartEl} style="width: 100%; height: 280px;"></div>
-</div>
+
+

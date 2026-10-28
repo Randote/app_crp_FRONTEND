@@ -1,8 +1,10 @@
 <script>
-  import cpIcon from '$lib/assets/crp_logo_icon.svg';
+import cpIcon from '$lib/assets/crp_logo_icon.svg';
   import { base } from '$app/paths';
   import { goto } from '$app/navigation';
+  import { page } from '$app/stores'; 
   import FieldError from '$lib/components/FieldError.svelte';
+  import Loader from '$lib/components/General/Loader.svelte';
   import { mostrarNotificacion } from '$lib/Notificacion.svelte.js';
 
   let username = $state('');
@@ -49,7 +51,9 @@
         cargo: data.cargo
       }));
 
-      goto(`${base}/Inicio`);
+      const redirectTo = $page.url.searchParams.get('redirectTo');
+      goto(redirectTo ? redirectTo : `${base}/Inicio`);
+
     } catch (err) {
       mostrarNotificacion(err.message, 'error');
     } finally {
@@ -63,7 +67,16 @@
   <link rel="icon" href={cpIcon} />
 </svelte:head>
 
-<div class="relative w-full h-full max-w-[420px] rounded-xl border border-stone-200 bg-[var(--bg-base)] p-8 shadow-xl">
+<div class="relative w-full h-full max-w-[420px] rounded-xl border border-stone-200 bg-[var(--bg-base)] p-8 overflow-hidden">
+  
+  <!-- Overlay de carga con efecto desenfocado -->
+  {#if loading}
+<div class="fixed inset-0 z-50 flex flex-col items-center justify-center gap-3 bg-white/70 backdrop-blur-sm transition-all">
+    <Loader />
+    <span class="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">Iniciando sesión</span>
+    </div>
+  {/if}
+
   <div class="mb-6 flex flex-col items-center gap-3">
     <img src={cpIcon} alt="Logo Corimon" class="h-12 w-auto" />
     <h1 class="text-lg font-bold text-[var(--text-primary)]">Acciones Correctivas</h1>
@@ -88,7 +101,7 @@
       </span>
       <span class="flex-1">
         <span class="block text-[13.5px] font-semibold text-[var(--text-primary)]">Realizar Registro</span>
-        <span class="block text-[11.5px] text-[var(--text-hint)]">Llenar formulario CAPA sin cuenta</span>
+        <span class="block text-[11.5px] text-[var(--text-hint)]">Llenar formulario sin cuenta</span>
       </span>
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0 text-[var(--text-hint)]">
         <path d="m9 18 6-6-6-6" />
@@ -141,7 +154,7 @@
         <label class="text-[13px] font-medium text-[var(--text-secondary)]" for="password">
           Contraseña
         </label>
-        <a href="{base}/recuperar" class="text-[12px] font-medium text-[#8B1A2A] hover:underline">
+        <a href="{base}/Reset-Password" class="text-[12px] font-medium text-[#8B1A2A] hover:underline">
           ¿Olvidaste tu contraseña?
         </a>
       </div>
@@ -181,7 +194,7 @@
       class="mt-2 w-full cursor-pointer rounded-lg bg-[#8B1A2A] px-6 py-2.5 text-sm font-semibold text-white transition-all hover:bg-[#701420] disabled:opacity-60 disabled:cursor-not-allowed"
       disabled={loading}
     >
-      {loading ? 'Ingresando...' : 'Entrar'}
+      Entrar
     </button>
   </form>
 </div>

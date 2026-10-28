@@ -227,11 +227,11 @@
 
 .matriz-tabla {
   width: 100%;
-  table-layout: fixed;
+  table-layout: auto; /* Cambiado de fixed a auto para que las columnas respeten mejor el contenido dinámico con rowspan */
   border-collapse: separate;
   border-spacing: 0;
   font-size: 13px;
-   min-width: 1740px;
+  min-width: 1740px;
 }
 
 .matriz-tabla thead th {
@@ -252,7 +252,7 @@
 
 .matriz-tabla tbody td {
   padding: 16px var(--space-lg);
-  vertical-align: top;
+  vertical-align: top !important; /* Fuerza a que todas las celdas, con o sin rowspan, se alineen siempre arriba */
   border-bottom: 1px solid var(--border-subtle);
   color: var(--text-primary);
   overflow-wrap: break-word;

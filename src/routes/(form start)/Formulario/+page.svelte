@@ -114,42 +114,47 @@ function estadoInicialPlanAccion() {
   }
 
   if (verIshikawa || ver5Porques) {
-  payload.plan_accion_grupos = planAccion.map((grupo, gi) => ({
-    causa_raiz_numero: gi + 1,
-    acciones: grupo.acciones.map((a) => ({
-      descripcion: a.descripcion,
-      fecha: a.fecha || null,
-      responsable: a.responsable || null,
-      email: a.email || null,
-      metodologia_descripcion: a.metodologia.descripcion || null,
-      metodologia_fecha: a.metodologia.fecha || null,
-      metodologia_responsable: a.metodologia.responsable || null,
-      metodologia_email: a.metodologia.email || null
-    }))
+    payload.plan_accion_grupos = planAccion.map((grupo, gi) => ({
+      causa_raiz_numero: gi + 1,
+      acciones: grupo.acciones.map((accion) => ({
+    descripcion: accion.descripcion,
+    fecha: accion.sinFecha || !accion.fecha ? null : accion.fecha,
+    responsables: accion.responsables.map((r) => ({
+      nombre: r.nombre,
+      email: r.email,
+      proceso: r.proceso
+    })),
+    metodologia_descripcion: accion.metodologia.descripcion,
+    metodologia_fecha: accion.metodologia.fecha,
+    metodologia_responsable: accion.metodologia.responsable,
+    metodologia_email: accion.metodologia.email
+  }))
   }));
 }
 
     return payload;
   }
 
-  async function handleSubmitGlobal(e) {
+async function handleSubmitGlobal(e) {
     e.preventDefault();
 
-    if (!accionesFormRef.validarRegistro()) {
+    if (!accionesFormRef?.validarRegistro()) {
       return;
     }
 
-    if (verIshikawa && !ishikawaRef.validar()) {
+    if (verIshikawa && ishikawaRef && !ishikawaRef.validar()) {
       return;
     }
 
     if (ver5Porques && why5Ref && !why5Ref.validar()) {
-  return;
-}
+      return;
+    }
 
-  const payload = construirPayload();
-  console.log('Payload:', payload);
-  console.log('JSON:', JSON.stringify(payload, null, 2));
+    if ((verIshikawa || ver5Porques) && planAccionRef && !planAccionRef.validar()) {
+      return;
+    }
+
+    const payload = construirPayload();
 
     enviando = true;
     try {
@@ -157,28 +162,31 @@ function estadoInicialPlanAccion() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify(construirPayload())
+        body: JSON.stringify(payload)
       });
 
       console.log('Status:', res.status);
+      console.log('Payload enviado:', payload);
 
-      if (!res.ok) {
-        const error = await res.json().catch(() => null);
-        mostrarNotificacion(error?.detail || 'Ocurrió un error al enviar el formulario.', 'error');
+if (!res.ok) {
+        const errorData = await res.json().catch(() => null);
+        console.error('Detalle del error 422 de FastAPI:', errorData); // <-- Agrega esto
+        mostrarNotificacion(errorData?.detail?.[0]?.msg || errorData?.detail || 'Ocurrió un error al enviar el formulario.', 'error');
         return;
       }
 
       const data = await res.json();
-      console.log(' Respuesta exitosa:', data);
       mostrarNotificacion(`Formulario enviado correctamente. Código: ${data.codificador}`, 'success');
-        form = estadoInicialForm();
-        acciones = [];
-        diagrama = estadoInicialDiagrama();
-        problema = '';
-        porques = estadoInicialPorques();
-        planAccion = estadoInicialPlanAccion();
-        verIshikawa = false;
-        ver5Porques = false;
+      
+      form = estadoInicialForm();
+      acciones = [];
+      diagrama = estadoInicialDiagrama();
+      problema = '';
+      porques = estadoInicialPorques();
+      planAccion = estadoInicialPlanAccion();
+      verIshikawa = false;
+      ver5Porques = false;
+
     } catch (err) {
       console.error(err);
       mostrarNotificacion('No se pudo conectar con el servidor.', 'error');
@@ -193,7 +201,7 @@ function estadoInicialPlanAccion() {
   <link rel="icon" href={cpIcon} />
 </svelte:head>
 
-<main class="box-border min-h-screen bg-stone-100 p-4 md:p-8">
+<main class="box-border min-h-screen bg-stone-100 p-4 md:p-6">
   <form onsubmit={handleSubmitGlobal}>
 
     <div class="mx-auto w-full max-w-screen-2xl rounded-xl border border-stone-200 bg-[var(--bg-base)] p-5 shadow-xl md:p-10">
@@ -219,22 +227,21 @@ function estadoInicialPlanAccion() {
       </div>
     {/if}
 
-    {#if verIshikawa || ver5Porques}
+{#if verIshikawa || ver5Porques}
       <div class="mx-auto w-full max-w-screen-2xl rounded-xl border border-stone-200 bg-[var(--bg-base)] p-5 shadow-xl md:p-10 mt-5">
-        <Planaccion bind:value={planAccion} usuarios={data.usuarios} />
+        <Planaccion bind:this={planAccionRef} bind:value={planAccion} usuarios={data.usuarios} />
+      </div>
+
+      <div class="mx-auto w-full max-w-screen-2xl flex justify-center mt-6">
+        <button
+          type="submit"
+          disabled={enviando}
+          class="rounded-lg bg-[var(--bg-rojito,#8B1A2A)] px-8 py-3 text-sm font-semibold text-white shadow-sm transition-opacity hover:opacity-90 disabled:opacity-50"
+        >
+          {enviando ? 'Enviando…' : 'Enviar formulario completo'}
+        </button>
       </div>
     {/if}
-
-
-    <div class="mx-auto w-full max-w-screen-2xl flex justify-center mt-6">
-      <button
-        type="submit"
-        disabled={enviando}
-        class="rounded-lg bg-[var(--bg-rojito,#8B1A2A)] px-8 py-3 text-sm font-semibold text-white shadow-sm transition-opacity hover:opacity-90 disabled:opacity-50"
-      >
-        {enviando ? 'Enviando…' : 'Enviar formulario completo'}
-      </button>
-    </div>
 
   </form>
 </main>

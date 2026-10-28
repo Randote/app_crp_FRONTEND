@@ -5,7 +5,7 @@
   import { onMount } from 'svelte';
   import crp from '$lib/assets/crp_logo_icon.svg';
 
-  let { contadores = {}, usuario = { nombre: 'Usuario', cargo: '',apellido: '' } } = $props();
+  let { contadores = {}, usuario = { nombre: 'Usuario', cargo: '', apellido: '' } } = $props();
   let colapsadoEscritorio = $state(false);
   let menuMovilAbierto = $state(false);    
   let menuUsuarioAbierto = $state(false);   
@@ -22,13 +22,13 @@
     menuUsuarioAbierto = !menuUsuarioAbierto;
   }
 
-  const NAV = [
+  const NAV_BASE = [
     {
       seccion: 'PRINCIPAL',
       items: [
         { label: 'Dashboard', href: `${base}/Inicio`, icon: 'dashboard' },
-        //{ label: 'Seguimiento', href: `${base}/Acciones`, icon: 'eye' },
         { label: 'Matriz', href: `${base}/Matriz`, icon: 'list' },
+        { label: 'Formulario', href: `${base}/Form`, icon: 'form' },
       ]
     },
     {
@@ -38,13 +38,26 @@
         { label: 'Reportes', href: `${base}/Reportes`, icon: 'chart' }
       ]
     },
-    {
+     {
       seccion: 'SISTEMA',
-      items: [
+       items: [
         { label: 'Configuración', href: `${base}/Configuracion`, icon: 'settings' }
       ]
     }
   ];
+
+  // Filtrado reactivo protegido con encadenamiento opcional para evitar errores en SSR
+  let NAV = $derived(
+    NAV_BASE.map(grupo => {
+      if (grupo.seccion === 'SISTEMA') {
+        return {
+          ...grupo,
+          items: (usuario?.cargo === 'Admin') ? grupo.items : []
+        };
+      }
+      return grupo;
+    }).filter(grupo => grupo.items.length > 0)
+  );
 
   function esActivo(href) {
     const ruta = $page.url.pathname;
@@ -69,7 +82,7 @@
   });
 
   function iniciales(nombre) {
-    return nombre
+    return (nombre || '')
       .split(' ')
       .filter(Boolean)
       .slice(0, 2)
@@ -77,23 +90,23 @@
       .join('');
   }
 
-async function cerrarSesion() {
-    try {
-        await fetch(`${import.meta.env.VITE_API_URL}/api/auth/logout`, {
-            method: 'POST',
-            credentials: 'include'
-        });
-    } catch (err) {
-        console.error('Error al cerrar sesión:', err);
-    } finally {
-        document.cookie = 'access_token=; path=/; max-age=0';
-        localStorage.removeItem('token');
-        localStorage.removeItem('usuario');
-        localStorage.removeItem('refresh_token');
-        menuUsuarioAbierto = false;
-        goto(`${base}/`);
-    }
-}
+  async function cerrarSesion() {
+      try {
+          await fetch(`${import.meta.env.VITE_API_URL}/api/auth/logout`, {
+              method: 'POST',
+              credentials: 'include'
+          });
+      } catch (err) {
+          console.error('Error al cerrar sesión:', err);
+      } finally {
+          document.cookie = 'access_token=; path=/; max-age=0';
+          localStorage.removeItem('token');
+          localStorage.removeItem('usuario');
+          localStorage.removeItem('refresh_token');
+          menuUsuarioAbierto = false;
+          goto(`${base}/`);
+      }
+  }
 </script>
 
 <header class="flex md:hidden items-center gap-4 bg-white border-b border-[#E4DFD6] px-4 h-14 w-full box-border flex-shrink-0">
@@ -174,7 +187,7 @@ async function cerrarSesion() {
 
   <div class="p-4 border-t border-[#E4DFD6] flex items-center gap-3 relative {colapsadoEscritorio ? 'md:justify-center md:py-4 md:px-0' : ''}">
     
-    {#if menuUsuarioAbierto}
+{#if menuUsuarioAbierto}
       <div 
         class="absolute bottom-16 left-4 right-4 bg-white border border-[#E4DFD6] rounded-xl shadow-xl z-50 py-1.5 flex flex-col font-sans transition-all duration-150
         {colapsadoEscritorio ? 'md:left-[60px] md:bottom-2 md:right-auto md:w-[210px] md:ml-2' : ''}"
@@ -182,12 +195,12 @@ async function cerrarSesion() {
         <a href="{base}/Perfil-usuario" onclick={() => menuUsuarioAbierto = false} class="px-4 py-2 text-[13px] text-[#2A2720] hover:bg-[#F0EDE6]/60 no-underline transition-colors text-left font-medium">
           Perfil
         </a>
+
+        {#if usuario?.cargo === 'Admin'}
           <a href="{base}/Registro-Usuario" onclick={() => menuUsuarioAbierto = false} class="px-4 py-2 text-[13px] text-[#2A2720] hover:bg-[#F0EDE6]/60 no-underline transition-colors text-left font-medium">
-          Registro de Usuario
-        </a>
-        <a href="{base}/configuracion" onclick={() => menuUsuarioAbierto = false} class="px-4 py-2 text-[13px] text-[#2A2720] hover:bg-[#F0EDE6]/60 no-underline transition-colors text-left font-medium">
-          Configuraciones
-        </a>
+            Registro de Usuario
+          </a>
+        {/if}
         
         <div class="border-t border-[#E4DFD6] my-1"></div>
         
@@ -239,5 +252,7 @@ async function cerrarSesion() {
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" x2="18" y1="20" y2="10"/><line x1="12" x2="12" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="14"/></svg>
   {:else if nombre === 'settings'}
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.1a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+    {:else if nombre === 'form'}
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14h6"/><path d="M4 2h10"/><rect x="4" y="18" width="16" height="4" rx="1"/><rect x="4" y="6" width="16" height="4" rx="1"/></svg>
   {/if}
 {/snippet}

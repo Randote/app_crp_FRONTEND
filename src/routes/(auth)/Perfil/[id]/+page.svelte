@@ -26,11 +26,11 @@
       etiqueta: 'Datos Personales',
       icono: 'M20 21a8 8 0 0 0-16 0M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z'
     },
-    {
-      id: 'permisos',
-      etiqueta: 'Cargo y Permisos',
-      icono: 'M12 2 3 7v6c0 5 4 9 9 9s9-4 9-9V7Z'
-    },
+    // {
+    //   id: 'permisos',
+    //   etiqueta: 'Cargo y Permisos',
+    //   icono: 'M12 2 3 7v6c0 5 4 9 9 9s9-4 9-9V7Z'
+    // },
     {
       id: 'seguridad',
       etiqueta: 'Seguridad y Contraseña',
@@ -96,7 +96,6 @@
         </div>
         <div>
           <h2 class="text-[15px] font-bold text-[var(--text-primary)] uppercase">{usuario.nombre} {usuario.apellido} </h2>
-          <p class="text-[13px] text-[var(--text-secondary)]"> Actualiza tus datos de contacto.</p>
         </div>
       </div>
 
@@ -134,11 +133,11 @@
         </div>
         <Editar {usuario} onGuardar={onGuardarPerfil} modoAdmin={true} />
 
-      {:else if tabActiva === 'permisos'}
+      <!-- {:else if tabActiva === 'permisos'}
         <div class="mb-5 border-b border-[var(--border-subtle)] pb-4">
           <h3 class="text-[15px] font-bold text-[var(--bg-rojito)]">Cargo y Permisos</h3>
         </div>
-        <Editarpermisos {usuario} onGuardar={onGuardarPermisos} />
+        <Editarpermisos {usuario} onGuardar={onGuardarPermisos} /> -->
 
       {:else if tabActiva === 'seguridad'}
         <div class="mb-5 border-b border-[var(--border-subtle)] pb-4">

@@ -1,4 +1,5 @@
 <script>
+  import { tick } from 'svelte';
   import FieldError from './FieldError.svelte';
   import { mostrarNotificacion, ocultarNotificacion } from '$lib/Notificacion.svelte.js';
 
@@ -14,25 +15,31 @@
     problema = $bindable('')
   } = $props();
 
-  // ASIGNAMOS LOS VALORES INFERIORES (PA QUE NO SE TE OLVIDE PANFILO)
   const filaInferior = new Set(['metodo', 'medicion', 'medio_ambiente']);
+  const VALOR_MAXIMO = 5;
 
   let validationErrors = $state({});
   let errorProblema = $state('');
 
-  // AQUI TOMAMOS LOS VALORES DE LOS INPUTS (PA QUE NO SE TE OLVIDE PANFILO)
-  function agregarCausa(categoria) {
+  async function agregarCausa(categoria) {
     const nueva = { texto: '', valor: 0 };
+    let nuevoIndex;
+
     if (filaInferior.has(categoria)) {
       diagrama[categoria].causas.unshift(nueva);
+      nuevoIndex = 0;
     } else {
       diagrama[categoria].causas.push(nueva);
+      nuevoIndex = diagrama[categoria].causas.length - 1;
     }
+
     validationErrors = {};
-    ocultarNotificacion(); 
+    ocultarNotificacion();
+
+    await tick();
+    document.getElementById(`textarea-${categoria}-${nuevoIndex}`)?.focus();
   }
 
-  // AQUI BORRAMOS (PA QUE NO SE TE OLVIDE PANFILO)
   function eliminarCausa(categoria, index) {
     diagrama[categoria].causas.splice(index, 1);
     validationErrors = {};
@@ -60,6 +67,19 @@
     }
   }
 
+  function limitarValor(cat, i) {
+    const causa = diagrama[cat].causas[i];
+    if (causa.valor !== '' && causa.valor !== null && causa.valor > VALOR_MAXIMO) {
+      causa.valor = VALOR_MAXIMO;
+    }
+    if (causa.valor < 0 || isNaN(causa.valor)) {
+      causa.valor = 0;
+    }
+  }
+
+  function seleccionarAlEnfocar(e) {
+    e.target.select();
+  }
 
   export function validar() {
     validationErrors = {};
@@ -71,7 +91,6 @@
       return false;
     }
 
-    // 2. Verificar que cada categoría tenga al menos una causa
     const categoriasVacias = [];
     for (const cat in diagrama) {
       if (diagrama[cat].causas.length === 0) {
@@ -80,26 +99,9 @@
     }
     if (categoriasVacias.length > 0) {
       mostrarNotificacion(
-        `Debe agregar al menos una causa en: ${categoriasVacias.join(', ')}.`,
+        `Debe agregar al menos una causa en: ${categoriasVacias.join(', ')}. De no tener causa colocar N/A`,
         'warning'
       );
-      return false;
-    }
-
-    
-    // 3. Verificar que cada causa tenga un valor numérico > 0
-    let hayErrorValor = false;
-    for (const cat in diagrama) {
-      diagrama[cat].causas.forEach((causa, i) => {
-        if (!causa.valor || causa.valor <= 0) {
-          validationErrors[`${cat}-${i}`] = 'El valor debe ser mayor a 0.';
-          hayErrorValor = true;
-        }
-      });
-    }
-
-    if (hayErrorValor) {
-      mostrarNotificacion('Corrija los valores numéricos resaltados.', 'warning');
       return false;
     }
 
@@ -128,21 +130,25 @@
             <div class="flex flex-col gap-0.5">
               <input
                 type="number"
+                max={VALOR_MAXIMO}
+                min="0"
                 bind:value={causa.valor}
-                oninput={() => clearError(cat, i)}
+                oninput={() => {
+                  limitarValor(cat, i);
+                  clearError(cat, i);
+                }}
+                onfocus={seleccionarAlEnfocar}
                 class="ishikawa-numero w-16 text-center [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                class:border-red-500={validationErrors[`${cat}-${i}`]}
-                class:border-2={validationErrors[`${cat}-${i}`]}
               />
-              <FieldError message={validationErrors[`${cat}-${i}`]} />
             </div>
 
-            <input
-              type="text"
+            <textarea
+              id={`textarea-${cat}-${i}`}
               bind:value={causa.texto}
               placeholder="Describa la causa..."
-              class="ishikawa-input-causa input flex-1 min-w-0"
-            />
+              class="ishikawa-input-causa input flex-1 min-w-0 !h-auto"
+              rows="3"
+            ></textarea>
 
             <button
               type="button"
@@ -186,7 +192,6 @@
       {@render filaCategoria(cat)}
     {/each}
   </div>
-
 
   <div class="problema-card relative z-20 !mt-4 lg:mb-0">
     <div class="problema-badge">Efecto</div>

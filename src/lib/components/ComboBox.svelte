@@ -1,48 +1,96 @@
-
 <script>
-let {
-    value = $bindable(''),
-    options = [],
-    placeholder = 'Buscar…',
-    error = false
-} = $props();
+  import { onMount } from 'svelte';
 
-let query = $state(value);
-let abierto = $state(false);
-let contenedor;
+  let {
+      value = $bindable(''),
+      options = [],
+      placeholder = 'Buscar…',
+      error = false
+  } = $props();
 
-$effect(() => {
-    query = value;
-});
+  let query = $state(value);
+  let abierto = $state(false);
+  let contenedor;
 
-let filtradas = $derived(
-    query.trim() === ''
-    ? options
-    : options.filter(o => o.toLowerCase().includes(query.trim().toLowerCase()))
-);
+  let posicion = $state({ top: 0, left: 0, width: 0 });
 
-function seleccionar(op) {
-    value = op;
-    query = op;
-    abierto = false;
-}
+  $effect(() => {
+      query = value;
+  });
 
-function manejarClickFuera(e) {
-    if (contenedor && !contenedor.contains(e.target)) {
-    abierto = false;
-    if (query !== value) query = value;
-    }
-}
+  let filtradas = $derived(
+      query.trim() === ''
+      ? options
+      : options.filter(o => o.toLowerCase().includes(query.trim().toLowerCase()))
+  );
 
-function manejarKeydown(e) {
-    if (e.key === 'Escape') {
-    abierto = false;
-    query = value;
-    }
-}
+  function portal(node) {
+      document.body.appendChild(node);
+      return {
+          destroy() {
+              if (node.parentNode) node.parentNode.removeChild(node);
+          }
+      };
+  }
+
+  function actualizarPosicion() {
+      if (!contenedor) return;
+      const r = contenedor.getBoundingClientRect();
+      posicion = { top: r.bottom + 4, left: r.left, width: r.width };
+  }
+
+  function abrir() {
+      abierto = true;
+      actualizarPosicion();
+  }
+
+  function seleccionar(op) {
+      value = op;
+      query = op;
+      abierto = false;
+  }
+
+  function manejarClickFuera(e) {
+      if (contenedor && !contenedor.contains(e.target) && !e.target.closest('.combobox-portal')) {
+          abierto = false;
+          if (query !== value) query = value;
+      }
+  }
+
+  function manejarKeydown(e) {
+      if (e.key === 'Escape') {
+          abierto = false;
+          query = value;
+      }
+  }
+
+  function manejarWheel(e) {
+      const el = e.currentTarget;
+      const atTop = el.scrollTop === 0 && e.deltaY < 0;
+      const atBottom = el.scrollHeight - el.scrollTop === el.clientHeight && e.deltaY > 0;
+      
+      if (atTop || atBottom) {
+          e.preventDefault();
+      }
+      e.stopPropagation();
+  }
+
+
+  onMount(() => {
+      const handleScroll = () => {
+          if (abierto) actualizarPosicion();
+      };
+      window.addEventListener('scroll', handleScroll, true);
+      return () => {
+          window.removeEventListener('scroll', handleScroll, true);
+      };
+  });
 </script>
 
-<svelte:window onclick={manejarClickFuera} />
+<svelte:window
+    onclick={manejarClickFuera}
+    onresize={actualizarPosicion}
+/>
 
 <div class="relative" bind:this={contenedor}>
 <input
@@ -51,14 +99,19 @@ function manejarKeydown(e) {
     class:input--error={error}
     {placeholder}
     bind:value={query}
-    onfocus={() => (abierto = true)}
-    oninput={() => (abierto = true)}
+    onfocus={abrir}
+    oninput={abrir}
     onkeydown={manejarKeydown}
     autocomplete="off"
 />
 
 {#if abierto && filtradas.length > 0}
-    <ul class="absolute z-30 mt-1 max-h-56 w-full scrollbar-thin overflow-y-auto rounded-lg border border-[var(--border-subtle)] bg-white shadow-lg">
+    <ul
+        use:portal
+        onwheel={manejarWheel}
+        class="combobox-portal fixed z-[9999] max-h-56 overflow-y-auto rounded-lg border border-[var(--border-subtle)] bg-white shadow-lg scrollbar-thin"
+        style="top: {posicion.top}px; left: {posicion.left}px; width: {posicion.width}px;"
+    >
     {#each filtradas as op}
         <li>
         <button
@@ -74,7 +127,12 @@ function manejarKeydown(e) {
 {/if}
 
 {#if abierto && query.trim() !== '' && filtradas.length === 0}
-    <div class="absolute z-30 mt-1 w-full rounded-lg border border-[var(--border-subtle)] bg-white px-3 py-2 text-[13px] text-[var(--text-hint)] shadow-lg">
+    <div
+        use:portal
+        onwheel={manejarWheel}
+        class="combobox-portal fixed z-[9999] rounded-lg border border-[var(--border-subtle)] bg-white px-3 py-2 text-[13px] text-[var(--text-hint)] shadow-lg"
+        style="top: {posicion.top}px; left: {posicion.left}px; width: {posicion.width}px;"
+    >
     Sin coincidencias
     </div>
 {/if}

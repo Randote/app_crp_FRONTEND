@@ -1,9 +1,30 @@
 <script>
   import FormSection from './FormSection.svelte';
   import FieldError from './FieldError.svelte';
-  import { mostrarNotificacion } from '$lib/Notificacion.svelte.js';
+  import ComboBox from './ComboBox.svelte';
+  import { mostrarNotificacion, ocultarNotificacion } from '$lib/Notificacion.svelte.js';
 
-let { value = $bindable([]), usuarios = [] } = $props();
+  let { value = $bindable([]), usuarios = [] } = $props();
+
+  const procesos = [
+    'Dirección Estratégica (GGG)',
+    'Gestión de Negocios (GNE)',
+    'Gestión de Control de Producción (GCP)',
+    'Gestión de Producción (GPR)',
+    'Gestión de Logística de Salida (GLS)',
+    'Gestión de diseño y desarrollo de productos (GDP)',
+    'Gestión de Compras (GCO)',
+    'Gestión de Control De Calidad (GCC)',
+    'Gestión de Logística de Entrada (GLE)',
+    'Gestión de Calidad (GCA)',
+    'Gestión de Finanzas (GFI)',
+    'Gestión de Mantenimiento (GMT)',
+    'Gestión de TI(GTI)',
+    'Gestión de Seguridad y Salud en el Trabajo (GSL)',
+    'Gestión de Proyectos (GPY)',
+    'Gestión de Personal (GPE)',
+    'Gestión de Talento Humano (GTH)'
+  ];
 
   let contadorId = 0;
   function generarId(prefijo) {
@@ -11,14 +32,24 @@ let { value = $bindable([]), usuarios = [] } = $props();
     return `${prefijo}-${Date.now()}-${contadorId}`;
   }
 
+  function crearResponsable() {
+    return { id: generarId('resp'), nombre: '', email: '', proceso: '' };
+  }
+
   function crearAccion() {
     return {
       id: generarId('accion'),
       descripcion: '',
+      sinFecha: false, 
       fecha: '',
-      responsable: '',
-      email: '',
-      metodologia: { descripcion: '', fecha: '', responsable: '', email: '' }
+      responsables: [crearResponsable()],
+      metodologia: { 
+        descripcion: '', 
+        sinFecha: false, 
+        fecha: '', 
+        responsable: '', 
+        email: '' 
+      }
     };
   }
 
@@ -53,6 +84,15 @@ let { value = $bindable([]), usuarios = [] } = $props();
     grupo.acciones = grupo.acciones.filter((a) => a.id !== accionId);
   }
 
+  function agregarResponsable(accion) {
+    accion.responsables.push(crearResponsable());
+  }
+
+  function eliminarResponsable(accion, respId) {
+    if (accion.responsables.length <= 1) return;
+    accion.responsables = accion.responsables.filter((r) => r.id !== respId);
+  }
+
   let validationErrors = $state({});
 
   function clearError(accionId) {
@@ -64,14 +104,13 @@ let { value = $bindable([]), usuarios = [] } = $props();
   }
 
   function seleccionarResponsable(objetivo, campoNombre, campoCorreo, nombreSeleccionado) {
-  const usuario = usuarios.find(
-    (u) => `${u.nombre} ${u.apellido}` === nombreSeleccionado
-  );
-  objetivo[campoNombre] = nombreSeleccionado;
-  objetivo[campoCorreo] = usuario?.email ?? '';
-}
+    const usuario = usuarios.find(
+      (u) => `${u.nombre} ${u.apellido}` === nombreSeleccionado
+    );
+    objetivo[campoNombre] = nombreSeleccionado;
+    objetivo[campoCorreo] = usuario?.email ?? '';
+  }
 
-  // Se llama desde el padre (bind:this) antes de armar el payload final.
   export function validar() {
     validationErrors = {};
     let tieneErrores = false;
@@ -82,23 +121,38 @@ let { value = $bindable([]), usuarios = [] } = $props();
           validationErrors[accion.id] = 'La descripción de la acción es obligatoria.';
           tieneErrores = true;
         }
+
+        if (!accion.sinFecha && (!accion.fecha || !accion.fecha.trim())) {
+          validationErrors[`${accion.id}-fecha`] = 'La fecha es obligatoria.';
+          tieneErrores = true;
+        }
+
+        if (!accion.metodologia.descripcion || !accion.metodologia.descripcion.trim()) {
+          validationErrors[`${accion.id}-met-desc`] = 'La metodología es obligatoria.';
+          tieneErrores = true;
+        }
+
+        if (!accion.metodologia.sinFecha && (!accion.metodologia.fecha || !accion.metodologia.fecha.trim())) {
+          validationErrors[`${accion.id}-met-fecha`] = 'La fecha es obligatoria.';
+          tieneErrores = true;
+        }
       }
     }
 
     if (tieneErrores) {
-      mostrarNotificacion('Corrija las acciones resaltadas en el Plan de Acción.', 'error');
+      mostrarNotificacion('Corrija los campos y fechas resaltadas en el Plan de Acción.', 'error');
       return false;
     }
 
+    ocultarNotificacion();
     return true;
   }
 
-  // Ahora la grilla empieza en la fila 1 (el encabezado ya no está dentro)
   let layouts = $derived.by(() => {
     let filaActual = 1;
     const resultado = [];
     for (const grupo of value) {
-      const filas = grupo.acciones.length + 1; // acciones + botón "Agregar acción"
+      const filas = grupo.acciones.length + 1;
       resultado.push({ grupo, filaInicio: filaActual, filas });
       filaActual += filas;
     }
@@ -112,38 +166,42 @@ let { value = $bindable([]), usuarios = [] } = $props();
   );
 </script>
 
-<FormSection title='Plan de acción'>
+<FormSection title="Plan de acción">
   <div class="w-full overflow-x-auto">
-    <div class="flex flex-col gap-4 min-w-[1200px] lg:min-w-0">
+    <div class="flex flex-col gap-4 min-w-[1450px]">
 
-      <div class="hidden lg:flex bg-[#F0EDE6] border border-[var(--border-medium)] rounded-[8px] py-1">
-        <div class="w-[48px] shrink-0 px-2 py-2 flex items-center justify-center">
-          <span class="font-[var(--font-ui,'Sora')] text-[11px] font-semibold text-[var(--text-hint,#9A9590)] uppercase tracking-wide">N#</span>
-        </div>
-        <div class="flex-1 px-3 py-2 border-l border-[var(--border-medium)] flex items-center">
-          <span class="font-[var(--font-ui,'Sora')] text-[11px] font-semibold text-[var(--text-hint,#9A9590)] uppercase tracking-wide">Acciones correctivas</span>
-        </div>
-        <div class="w-[140px] shrink-0 px-3 py-2 border-l border-[var(--border-medium)] flex items-center justify-center">
-          <span class="font-[var(--font-ui,'Sora')] text-[11px] font-semibold text-[var(--text-hint,#9A9590)] uppercase tracking-wide text-center">Fecha</span>
-        </div>
-        <div class="w-[200px] shrink-0 px-3 py-2 border-l border-[var(--border-medium)] flex items-center justify-center">
-          <span class="font-[var(--font-ui,'Sora')] text-[11px] font-semibold text-[var(--text-hint,#9A9590)] uppercase tracking-wide text-center">Responsable</span>
-        </div>
-        <div class="flex-1 px-3 py-2 border-l border-[var(--border-medium)]">
-          <span class="font-[var(--font-ui,'Sora')] text-[11px] font-semibold text-[var(--text-hint,#9A9590)] uppercase tracking-wide text-center">Verificación de la eficacia</span>
-        </div>
-        <div class="w-[140px] shrink-0 px-3 py-2 border-l border-[var(--border-medium)] flex items-center justify-center">
-          <span class="font-[var(--font-ui,'Sora')] text-[11px] font-semibold text-[var(--text-hint,#9A9590)] uppercase tracking-wide text-center">Fecha</span>
-        </div>
-        <div class="w-[200px] shrink-0 px-3 py-2 border-l border-[var(--border-medium)] flex items-center justify-center">
-          <span class="font-[var(--font-ui,'Sora')] text-[11px] font-semibold text-[var(--text-hint,#9A9590)] uppercase tracking-wide text-center">Responsable</span>
-        </div>
-      </div>
+      <!-- Contenedor principal unificado (Tarjeta Blanca) -->
+      <div class="border border-[var(--border-medium)] rounded-[8px] shadow-sm bg-white overflow-hidden">
 
-      <div class="border border-[var(--border-medium)] rounded-[8px] shadow-sm bg-white">
+        <!-- Cabecera de la tabla integrada -->
+        <div class="hidden lg:grid bg-[var(--bg-rojito)] border-b border-[var(--border-medium)] py-2.5 items-center" style="grid-template-columns: 48px minmax(280px, 1.5fr) 160px minmax(260px, 1.2fr) minmax(280px, 1.5fr) 160px minmax(260px, 1.2fr);">
+          <div class="px-2 flex items-center justify-center">
+            <span class="font-[var(--font-ui,'Sora')] text-[11px] font-semibold text-white uppercase tracking-wide">N#</span>
+          </div>
+          <div class="px-3 border-l border-[var(--border-medium)] flex items-center">
+            <span class="font-[var(--font-ui,'Sora')] text-[11px] font-semibold text-white uppercase tracking-wide">Acciones correctivas</span>
+          </div>
+          <div class="px-3 border-l border-[var(--border-medium)] flex items-center justify-center">
+            <span class="font-[var(--font-ui,'Sora')] text-[11px] font-semibold text-white uppercase tracking-wide text-center">Fecha</span>
+          </div>
+          <div class="px-3 border-l border-[var(--border-medium)] flex items-center justify-center">
+            <span class="font-[var(--font-ui,'Sora')] text-[11px] font-semibold text-white uppercase tracking-wide text-center">Responsable(s)</span>
+          </div>
+          <div class="px-3 border-l border-[var(--border-medium)] flex items-center">
+            <span class="font-[var(--font-ui,'Sora')] text-[11px] font-semibold text-white uppercase tracking-wide">Verificación de la eficacia</span>
+          </div>
+          <div class="px-3 border-l border-[var(--border-medium)] flex items-center justify-center">
+            <span class="font-[var(--font-ui,'Sora')] text-[11px] font-semibold text-white uppercase tracking-wide text-center">Fecha</span>
+          </div>
+          <div class="px-3 border-l border-[var(--border-medium)] flex items-center justify-center">
+            <span class="font-[var(--font-ui,'Sora')] text-[11px] font-semibold text-white uppercase tracking-wide text-center">Responsable</span>
+          </div>
+        </div>
+
+        <!-- Cuerpo de la tabla principal -->
         <div
           class="grid"
-          style="grid-template-columns: 48px 1fr 140px 200px 1fr 140px 200px; grid-template-rows: auto repeat({totalFilas - 1}, auto);"
+          style="grid-template-columns: 48px minmax(280px, 1.5fr) 160px minmax(260px, 1.2fr) minmax(280px, 1.5fr) 160px minmax(260px, 1.2fr); grid-template-rows: repeat({totalFilas - 1}, auto);"
         >
           {#each layouts as { grupo, filaInicio, filas }, gi (grupo.id)}
             <div
@@ -168,16 +226,17 @@ let { value = $bindable([]), usuarios = [] } = $props();
             </div>
 
             {#each grupo.acciones as accion, ai (accion.id)}
+              <!-- Columna 2: Descripción Acción -->
               <div
-                class="relative border-r border-b border-[var(--border-medium)] p-2 group"
+                class="relative border-r border-b border-[var(--border-medium)] p-2.5 group"
                 style="grid-row: {filaInicio + ai}; grid-column: 2;"
               >
                 <textarea
                   bind:value={accion.descripcion}
                   oninput={() => clearError(accion.id)}
                   placeholder="Describe la acción correctiva..."
-                  rows="5"
-                  class="textarea !min-h-[130px] !resize-none w-full"
+                  rows="4"
+                  class="textarea !min-h-[140px] w-full resize-y"
                   class:input--error={validationErrors[accion.id]}
                 ></textarea>
                 <FieldError message={validationErrors[accion.id]} />
@@ -197,49 +256,111 @@ let { value = $bindable([]), usuarios = [] } = $props();
                 {/if}
               </div>
 
-              <!-- Fecha acción (col 3) -->
-              <div class="border-r border-b border-[var(--border-medium)] p-2 " style="grid-row: {filaInicio + ai}; grid-column: 3;">
-                <input class="input-date" type="date" bind:value={accion.fecha} placeholder="mes-año" />
+              <!-- Columna 3: Fecha Acción -->
+              <div class="border-r border-b border-[var(--border-medium)] p-2.5 flex flex-col justify-center gap-1.5" style="grid-row: {filaInicio + ai}; grid-column: 3;">
+                {#if !accion.sinFecha}
+                  <input class="input-date w-full" type="date" bind:value={accion.fecha} />
+                {:else}
+                  <input class="input-date opacity-50 bg-stone-100 cursor-not-allowed w-full" type="date" disabled value="" />
+                {/if}
+
+                <label class="flex items-center gap-1.5 text-[11px] text-[var(--text-hint)] cursor-pointer select-none">
+                  <input type="checkbox" bind:checked={accion.sinFecha} class="rounded border-stone-300 text-[#8B1A2A] focus:ring-[#8B1A2A]" />
+                  Sin fecha
+                </label>
               </div>
 
-              <!-- Responsable + correo acción (col 4) -->
-              <div class="border-r border-b border-[var(--border-medium)] p-2 flex flex-col gap-1.5" style="grid-row: {filaInicio + ai}; grid-column: 4;">
-                <input class="input" type="text" bind:value={accion.responsable} placeholder="Nombre del responsable" />
-                <input class="input" type="email" bind:value={accion.email} placeholder="correo@corimon.com" />
+              <!-- Columna 4: Responsables -->
+              <div class="border-r border-b border-[var(--border-medium)] p-2.5 flex flex-col gap-2.5" style="grid-row: {filaInicio + ai}; grid-column: 4;">
+                {#each accion.responsables as resp, ri (resp.id)}
+                  <div
+                    class="flex flex-col gap-2"
+                    class:pt-3={ri > 0}
+                    class:border-t={ri > 0}
+                    class:border-[var(--border-subtle)]={ri > 0}
+                  >
+                    {#if accion.responsables.length > 1}
+                      <div class="flex items-center justify-between">
+                        <span class="text-[10.5px] font-semibold uppercase tracking-wide text-[var(--text-hint)]">
+                          Responsable {ri + 1}
+                        </span>
+                        <button
+                          type="button"
+                          onclick={() => eliminarResponsable(accion, resp.id)}
+                          class="text-[var(--text-hint,#9A9590)] hover:text-[var(--text-error,#B85050)] transition-colors cursor-pointer bg-transparent border-0 p-0.5"
+                          title="Eliminar este responsable"
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 7h16" /><path d="M10 11v6" /><path d="M14 11v6" />
+                            <path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-12" />
+                            <path d="M9 7V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3" />
+                          </svg>
+                        </button>
+                      </div>
+                    {/if}
+                
+                    <input class="input w-full" type="text" bind:value={resp.nombre} placeholder="Nombre del responsable" />
+                    <input class="input w-full" type="email" bind:value={resp.email} placeholder="correo@corimon.com" />
+                
+                    <ComboBox
+                      bind:value={resp.proceso}
+                      options={procesos}
+                      placeholder="Buscar proceso…"
+                    />
+                  </div>
+                {/each}
+
+                <button
+                  type="button"
+                  onclick={() => agregarResponsable(accion)}
+                  class="ishikawa-btn-agregar !text-[11px] !py-1 w-full mt-1"
+                >
+                  + Agregar usuario
+                </button>
               </div>
 
-              <!-- Metodología descripción (col 5) -->
-              <div class="border-r border-b border-[var(--border-medium)] p-2 bg-[#FAFBFB]" style="grid-row: {filaInicio + ai}; grid-column: 5;">
+              <!-- Columna 5: Metodología Descripción -->
+              <div class="border-r border-b border-[var(--border-medium)] p-2.5 bg-[#FAFBFB]" style="grid-row: {filaInicio + ai}; grid-column: 5;">
                 <textarea
                   bind:value={accion.metodologia.descripcion}
                   placeholder="Elaborar / Realizar..."
-                  rows="5"
-                  class="textarea !min-h-[130px] !resize-none"
+                  rows="4"
+                  class="textarea !min-h-[140px] w-full resize-y"
                 ></textarea>
               </div>
 
-              <!-- Metodología fecha (col 6) -->
-              <div class="border-r border-b border-[var(--border-medium)] p-2 bg-[#FAFBFB]" style="grid-row: {filaInicio + ai}; grid-column: 6;">
-                <input class="input-date" type="date" bind:value={accion.metodologia.fecha} placeholder="mes-año" />
+              <!-- Columna 6: Metodología Fecha -->
+              <div class="border-r border-b border-[var(--border-medium)] p-2.5 bg-[#FAFBFB] flex flex-col justify-center gap-1.5" style="grid-row: {filaInicio + ai}; grid-column: 6;">
+                {#if !accion.metodologia.sinFecha}
+                  <input class="input-date w-full" type="date" bind:value={accion.metodologia.fecha} />
+                {:else}
+                  <input class="input-date opacity-50 bg-stone-100 cursor-not-allowed w-full" type="date" disabled value="" />
+                {/if}
+                <label class="flex items-center gap-1.5 text-[11px] text-[var(--text-hint)] cursor-pointer select-none">
+                  <input type="checkbox" bind:checked={accion.metodologia.sinFecha} class="rounded border-stone-300 text-[#8B1A2A] focus:ring-[#8B1A2A]" />
+                  Sin fecha
+                </label>
               </div>
 
-            <div class="border-b border-[var(--border-medium)] p-2 bg-[#FAFBFB] flex flex-col gap-1.5" style="grid-row: {filaInicio + ai}; grid-column: 7;">
-              <select
-                class="input !h-[40px]"
-                value={accion.metodologia.responsable}
-                onchange={(e) => seleccionarResponsable(accion.metodologia, 'responsable', 'email', e.target.value)}
-              >
-                <option value="">Selecciona responsable...</option>
-                {#each usuarios as u}
-                  <option value={`${u.nombre} ${u.apellido}`}>{u.nombre} {u.apellido}</option>
-                {/each}
-              </select>
-              <input class="input" type="email" value={accion.metodologia.email} disabled placeholder="correo@corimon.com" />
-            </div>
+              <!-- Columna 7: Metodología Responsable -->
+              <div class="border-b border-[var(--border-medium)] p-2.5 bg-[#FAFBFB] flex flex-col gap-2" style="grid-row: {filaInicio + ai}; grid-column: 7;">
+                <select
+                  class="input !h-[40px] w-full"
+                  value={accion.metodologia.responsable}
+                  onchange={(e) => seleccionarResponsable(accion.metodologia, 'responsable', 'email', e.target.value)}
+                >
+                  <option value="">Selecciona responsable...</option>
+                  {#each usuarios as u}
+                    <option value={`${u.nombre} ${u.apellido}`}>{u.nombre} {u.apellido}</option>
+                  {/each}
+                </select>
+                <input class="input w-full" type="email" value={accion.metodologia.email} disabled placeholder="correo@corimon.com" />
+              </div>
             {/each}
 
+            <!-- Botón agregar acción dentro del grupo -->
             <div
-              class="border-r border-b border-[var(--border-medium)] p-2 bg-[color-mix(in_srgb,var(--text-primary)_2%,white)]"
+              class="border-r border-b border-[var(--border-medium)] p-3 bg-[color-mix(in_srgb,var(--text-primary)_2%,white)] flex items-center"
               style="grid-row: {filaInicio + grupo.acciones.length}; grid-column: 2 / span 6;"
             >
               <button
@@ -256,18 +377,20 @@ let { value = $bindable([]), usuarios = [] } = $props();
           {/each}
         </div>
 
-        <div class="px-4 py-3">
-          <button
-            type="button"
-            onclick={agregarGrupo}
-            class="ishikawa-btn-agregar gap-2 !w-[150px]"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="9" /><path d="M12 8v8" /><path d="M8 12h8" />
-            </svg>
-            Agregar causa raíz
-          </button>
-        </div>
+      </div>
+
+      <!-- Botón agregar causa raíz general -->
+      <div class="px-1">
+        <button
+          type="button"
+          onclick={agregarGrupo}
+          class="ishikawa-btn-agregar gap-2 !w-[180px]"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="9" /><path d="M12 8v8" /><path d="M8 12h8" />
+          </svg>
+          Agregar causa raíz
+        </button>
       </div>
 
     </div>

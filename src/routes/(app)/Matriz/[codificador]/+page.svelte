@@ -250,7 +250,7 @@
 </svelte:head>
 
 <main class="matriz-page-from">
-  <div class="flex flex-col gap-5 max-w-7xl mx-auto">
+  <div class="flex flex-col gap-5 max-w-8xl mx-auto">
 
     <div class="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-[var(--border-subtle)] border-t-[4px] border-t-[var(--bg-rojito)] bg-[var(--bg-card)] px-6 py-5 shadow-xs">
       <div class="flex items-center gap-4">
@@ -396,7 +396,11 @@
               Acciones correctivas programadas y seguimiento de tareas.
             </p>
           </div>
-          <MatrizEditar grupos={data.accion.plan_accion_grupos} />
+          <MatrizEditar
+            grupos={data.accion.plan_accion_grupos}
+            codificador={data.accion.codificador}
+            tipoHallazgoInicial={data.accion.tipo_hallazgo}
+          />
         </div>
 
       {:else if tabActiva === 'bitacora'}

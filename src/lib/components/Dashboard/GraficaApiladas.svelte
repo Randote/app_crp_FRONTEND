@@ -4,6 +4,8 @@
   import { BarChart } from 'echarts/charts';
   import { GridComponent, TooltipComponent, LegendComponent } from 'echarts/components';
   import { CanvasRenderer } from 'echarts/renderers';
+  import FormSection from '$lib/components/FormSection.svelte';
+ 
 
   echarts.use([BarChart, GridComponent, TooltipComponent, LegendComponent, CanvasRenderer]);
 
@@ -25,7 +27,7 @@
   });
 
     function obtenerFuente(variable) {
-  return getComputedStyle(document.documentElement)
+  return getComputedStyle(document.documentElement) 
     .getPropertyValue(variable)
     .trim();
 }
@@ -81,10 +83,8 @@
   });
 </script>
 
-<div class="relative bg-white border border-[#E4DFD6] rounded-[14px] p-5 overflow-hidden">
-  <h3 class="font-[var(--font-ui)] text-lg font-semibold text-[var(--text-primary)] mb-4">
-    {titulo}
-  </h3>
+ <FormSection title={titulo}>
+    <div bind:this={chartEl} style="width: 100%; height: 300px;"></div>
+ </FormSection>
 
-  <div bind:this={chartEl} style="width: 100%; height: 300px;"></div>
-</div>
+

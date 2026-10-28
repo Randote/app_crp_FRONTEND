@@ -71,44 +71,29 @@
       validationErrors = nuevos;
     }
   }
-
-  function clearErrorRaiz() {
-    if (errorRaizGeneral) {
-      errorRaizGeneral = '';
-    }
-  }
-
-  // Se llama desde el padre (bind:this) antes de armar el payload final.
-  // Solo tiene sentido invocarla si checkbox5Porques está activo.
-  export function validar() {
+export function validar() {
     validationErrors = {};
     errorRaizGeneral = '';
     let tieneErrores = false;
 
-    // 1. Cada causa potencial debe tener su descripción
+    // 1. Validar que si hay texto en pregunta, tenga respuesta (y viceversa)
     for (const causa of value) {
-      if (!causa.causaPotencial || !causa.causaPotencial.trim()) {
-        validationErrors[causa.id] = 'La causa potencial es obligatoria.';
-        tieneErrores = true;
-      }
-    }
+      for (let pi = 0; pi < causa.porques.length; pi++) {
+        const p = causa.porques[pi];
+        const tienePregunta = p.pregunta && p.pregunta.trim();
+        const tieneRespuesta = p.respuesta && p.respuesta.trim();
 
-    // 2. Cada causa debe tener al menos un porqué con pregunta o respuesta
-    for (const causa of value) {
-      const tieneAlgunPorque = causa.porques.some(
-        (p) => (p.pregunta && p.pregunta.trim()) || (p.respuesta && p.respuesta.trim())
-      );
-      if (!tieneAlgunPorque) {
-        validationErrors[causa.id] = 'Complete al menos un "por qué" para esta causa.';
-        tieneErrores = true;
+        if (tienePregunta && !tieneRespuesta) {
+          validationErrors[causa.id] = `Falta la respuesta en el ${ETIQUETAS_PORQUE[pi]} Por qué.`;
+          tieneErrores = true;
+          break;
+        }
+        if (!tienePregunta && tieneRespuesta) {
+          validationErrors[causa.id] = `Falta la pregunta en el ${ETIQUETAS_PORQUE[pi]} Por qué.`;
+          tieneErrores = true;
+          break;
+        }
       }
-    }
-
-    // 3. Debe existir al menos una causa raíz marcada en todo el análisis
-    const hayRaiz = value.some((causa) => causa.raizIndice !== null);
-    if (!hayRaiz) {
-      errorRaizGeneral = 'Debe marcar al menos una causa raíz antes de continuar.';
-      tieneErrores = true;
     }
 
     if (tieneErrores) {
@@ -124,32 +109,33 @@
 <FormSection title='5 ¿PORQUE?'>
 <div class="w-full overflow-x-auto lg:overflow-visible">
   <div class="flex flex-col gap-4 min-w-[900px] lg:min-w-0">
-    <div class="hidden lg:flex bg-[#F0EDE6] border border-[var(--border-medium)] rounded-[8px] py-1">
+    <div class="hidden lg:flex bg-[var(--bg-rojito)] border border-[var(--border-medium)] rounded-[8px] py-1">
       <div class="w-[210px] shrink-0 px-4 py-2 flex items-center">
-        <span class="font-[var(--font-ui,'Sora')] text-[11px] font-semibold text-[var(--text-hint,#9A9590)] uppercase tracking-wide">
+        <span class="font-[var(--font-ui,'Sora')] text-[11px] font-semibold text-white uppercase tracking-wide">
           Causa potencial
         </span>
       </div>
       {#each ETIQUETAS_PORQUE as etiqueta}
         <div class="flex-1 px-4 py-2 border-l border-[var(--border-medium)] text-center">
-          <span class="font-[var(--font-ui,'Sora')] text-[11px] font-semibold text-[var(--text-hint,#9A9590)] uppercase tracking-wide">
+          <span class="font-[var(--font-ui,'Sora')] text-[11px] font-semibold text-white uppercase tracking-wide">
             {etiqueta} Por qué
           </span>
         </div>
       {/each}
     </div>
 
-    {#each value as causa, ci (causa.id)}
+{#each value as causa, ci (causa.id)}
 
-      <div class="flex flex-col lg:flex-row border border-[var(--border-medium)] rounded-[8px] shadow-sm bg-white group">
+      <div class="flex flex-col lg:flex-row border border-[var(--border-medium)] rounded-[8px] shadow-sm bg-white group overflow-hidden">
 
+        <!-- Columna Izquierda: Causa Potencial -->
         <div class="w-full lg:w-[210px] shrink-0 p-4 border-b lg:border-b-0 lg:border-r border-[var(--border-medium)] bg-[#FAF8F4] flex flex-col justify-between gap-3">
           <textarea
             bind:value={causa.causaPotencial}
             oninput={() => clearErrorCausa(causa.id)}
             placeholder="Describe la causa potencial..."
-            rows="3"
-            class="textarea !min-height-0 flex-1 !resize-none"
+            rows="5"
+            class="textarea flex-1 !resize-none"
             class:input--error={validationErrors[causa.id]}
           ></textarea>
           <FieldError message={validationErrors[causa.id]} />
@@ -167,23 +153,25 @@
           </button>
         </div>
 
-        <div class="flex-1 flex flex-col lg:flex-row">
+        <!-- Columnas Derecha: Divididas en Fila Superior (Preguntas) y Fila Inferior (Respuestas) -->
+        <div class="flex-1 grid grid-cols-1 lg:grid-cols-5 divide-y lg:divide-y-0 lg:divide-x divide-[var(--border-medium)]">
           {#each causa.porques as porque, pi}
-            <div class="flex-1 flex flex-col border-b lg:border-b-0 lg:border-l border-[var(--border-medium)] first:border-l-0 bg-white">
-              <!-- Pregunta -->
-              <div class="p-3 border-b border-[var(--border-medium)] bg-white">
+            <div class="flex flex-col bg-white">
+              <!-- Fila Superior: Pregunta -->
+              <div class="p-3 border-b border-[var(--border-medium)] bg-white flex flex-col h-full">
                 <p class="font-[var(--font-ui,'Sora')] text-[9px] font-medium text-[var(--text-hint,#9A9590)] uppercase tracking-wide mb-1.5">
                   Pregunta {ETIQUETAS_PORQUE[pi]}
                 </p>
                 <textarea
                   bind:value={porque.pregunta}
                   placeholder="¿Por qué...?"
-                  rows="2"
-                  class="textarea !min-height-0 !resize-none"
+                  rows="3"
+                  class="textarea flex-1 !resize-none"
                 ></textarea>
               </div>
 
-              <div class="relative p-3 flex-1 flex flex-col bg-[#FAFBFB]">
+              <!-- Fila Inferior: Respuesta -->
+              <div class="relative p-3 bg-[#FAFBFB] flex flex-col h-full">
                 <div class="flex items-center justify-between mb-1.5">
                   <p class="font-[var(--font-ui,'Sora')] text-[9px] font-medium text-[var(--text-hint,#9A9590)] uppercase tracking-wide">
                     Respuesta
@@ -193,7 +181,7 @@
                     type="button"
                     onclick={() => toggleRaiz(causa, pi)}
                     title={causa.raizIndice === pi ? 'Quitar como causa raíz' : 'Marcar como causa raíz'}
-                    class="w-[18px] h-[18px] rounded-full border flex items-center justify-center text-[10px] font-[var(--font-ui,'Sora')] font-semibold transition-colors z-10
+                    class="w-[18px] h-[18px] rounded-full border flex items-center justify-center text-[10px] font-[var(--font-ui,'Sora')] font-semibold transition-colors z-10 cursor-pointer
                       {causa.raizIndice === pi
                         ? 'bg-[var(--text-error,#B85050)] border-[var(--text-error,#B85050)] text-white'
                         : 'bg-white border-[var(--border-medium,#D4CFC6)] text-[var(--text-hint,#9A9590)] hover:border-[var(--text-error,#B85050)]'}"
@@ -205,8 +193,8 @@
                 <textarea
                   bind:value={porque.respuesta}
                   placeholder="Respuesta..."
-                  rows="2"
-                  class="textarea !min-height-0 !resize-none flex-1"
+                  rows="3"
+                  class="textarea flex-1 !resize-none"
                 ></textarea>
 
                 {#if causa.raizIndice === pi}
@@ -216,9 +204,9 @@
             </div>
           {/each}
         </div>
+
       </div>
     {/each}
-
     <FieldError message={errorRaizGeneral} />
 
     <div class="pt-2">

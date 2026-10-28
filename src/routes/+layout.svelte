@@ -4,10 +4,11 @@
   let { children } = $props();
     import NotificationBar from '$lib/components/Notificaciones.svelte';
   import { getNotifMessage, getNotifType, ocultarNotificacion } from '$lib/Notificacion.svelte.js';
+   import Particulas from "$lib/components/Particulas.svelte";
 </script>
 
 
-  <div class="fixed top-20 left-1/2 -translate-x-1/2 z-50 w-auto max-w-lg">
+  <div class="fixed top-20 left-1/2 -translate-x-1/2 z-50 w-auto max-w-lg overflow-hidden">
     <NotificationBar
       message={getNotifMessage()}
       type={getNotifType()}
@@ -16,4 +17,6 @@
       onClose={ocultarNotificacion}
     />
   </div>
+
+  <Particulas/>
   {@render children()}

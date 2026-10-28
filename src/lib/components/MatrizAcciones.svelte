@@ -42,7 +42,7 @@
             !texto ||
             registro.codificador.toLowerCase().includes(texto) ||
             registro.proceso_afectado.toLowerCase().includes(texto) ||
-            (accion.responsable ?? '').toLowerCase().includes(texto) ||
+            (accion.responsables ?? []).some((r) => r.toLowerCase().includes(texto)) ||
             accion.accion.toLowerCase().includes(texto);
 
           return pasaFiltro && pasaBusqueda;
@@ -165,37 +165,37 @@
           onmouseup={detenerArrastre}
           onmouseleave={detenerArrastre}
         >
-          <table class="matriz-tabla">
+<table class="matriz-tabla">
             <colgroup>
-            <col class="col-ver"/>
+              <col class="col-ver"/>
               <col class="col-codigo" />
               <col class="col-proceso" />
               <col class="col-hallazgo" />
               <col class="col-tipo-hallazgo" />
+              <col class="col-estatus" />
               <col class="col-accion" />
               <col class="col-tipo" />
               <col class="col-responsable" />
               <col class="col-fecha" />
-              <col class="col-estatus" />
               <col class="col-obs" />
             </colgroup>
             <thead>
               <tr>
-              <th></th>
+                <th></th>
                 <th>Codificador</th>
                 <th>Proceso</th>
                 <th>Hallazgo</th>
                 <th>Tipo de Hallazgo</th>
+                <th>Estatus</th>
                 <th>Acción</th>
                 <th>Tipo de Acción</th>
                 <th>Responsable</th>
                 <th>Cierre</th>
-                <th>Estatus</th>
                 <th>Observaciones</th>
               </tr>
             </thead>
             <tbody>
-              {#each filas as fila (fila.registro.codificador + '-' + fila.accion.accion + fila.accion.responsable)}
+              {#each filas as fila (fila.registro.codificador + '-' + fila.accion.accion + (fila.accion.responsables ?? []).join(','))}
                 {@const estado = estadoDe(fila.accion.estatus)}
                 <tr class:grupo-nuevo={fila.nuevoGrupo}>
                   {#if fila.esPrimera}
@@ -223,20 +223,27 @@
                     </td>
                   {/if}
 
-                  <td class="col-accion celda-accion">{fila.accion.accion}</td>
-                  <td class="col-tipo texto-hint">{fila.accion.tipo_accion ?? '—'}</td>
-                  <td class="col-responsable">
-                    <div class="matriz-responsable">
-                      <span class="matriz-avatar">{iniciales(fila.accion.responsable)}</span>
-                      <span>{fila.accion.responsable ?? '—'}</span>
-                    </div>
-                  </td>
-                  <td class="col-fecha texto-hint">{fila.accion.fecha_cierre ?? '—'}</td>
                   <td class="col-estatus">
                     <span class="estatus-punto estatus--{estado}">
                       {ETIQUETA_ESTADO[estado]}
                     </span>
                   </td>
+
+                  <td class="col-accion celda-accion">{fila.accion.accion}</td>
+                  <td class="col-tipo texto-hint">{fila.accion.tipo_accion ?? '—'}</td>
+                  <td class="col-responsable">
+                    <div class="flex flex-col gap-1.5">
+                      {#each fila.accion.responsables ?? [] as nombre}
+                        <div class="matriz-responsable">
+                          <span class="matriz-avatar">{iniciales(nombre)}</span>
+                          <span>{nombre}</span>
+                        </div>
+                      {:else}
+                        <span class="texto-hint">—</span>
+                      {/each}
+                    </div>
+                  </td>
+                  <td class="col-fecha texto-hint">{fila.accion.fecha_cierre ?? '—'}</td>
                   <td class="col-obs celda-obs texto-hint">{fila.accion.observaciones ?? '—'}</td>
                 </tr>
               {/each}

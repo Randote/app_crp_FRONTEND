@@ -1,15 +1,54 @@
 <script>
-  let { acciones = $bindable([]), errors = [] } = $props();
+  let { acciones = $bindable([]), errors = $bindable([]) } = $props();
 
   function agregarFila() {
     acciones.push({ accion: '', fecha: '', responsable: '', estatus: '' });
-    // Forzar reactividad en Svelte 5
+    errors.push({});
     acciones = acciones;
+    errors = errors;
   }
 
   function eliminarFila(index) {
     acciones.splice(index, 1);
+    errors.splice(index, 1);
     acciones = acciones;
+    errors = errors;
+  }
+
+  export function validar() {
+    errors = acciones.map(() => ({}));
+    let tieneErrores = false;
+
+    if (acciones.length === 0) {
+      return true;
+    }
+
+    acciones.forEach((a, i) => {
+      const filaErrores = {};
+
+      if (!a.accion || !a.accion.trim()) {
+        filaErrores.accion = 'Requerida';
+        tieneErrores = true;
+      }
+      if (!a.fecha || !a.fecha.trim()) {
+        filaErrores.fecha = 'Requerida';
+        tieneErrores = true;
+      }
+      if (!a.responsable || !a.responsable.trim()) {
+        filaErrores.responsable = 'Requerido';
+        tieneErrores = true;
+      }
+      if (!a.estatus || !a.estatus.trim()) {
+        filaErrores.estatus = 'Requerido';
+        tieneErrores = true;
+      }
+
+      if (Object.keys(filaErrores).length > 0) {
+        errors[i] = filaErrores;
+      }
+    });
+
+    return !tieneErrores;
   }
 </script>
 
@@ -73,17 +112,17 @@
                 <span class="text-[11px] text-[var(--text-error)]">{errors[i].responsable}</span>
               {/if}
             </td>
-            <td class="border-b border-[var(--border-subtle)] px-2 py-2" >
-            <select
-              class="select w-full h-9 text-[13px]"
-              class:select--error={errors[i]?.estatus}
-              bind:value={accion.estatus}
-            >
-              <option class="option" value="" disabled></option>
-              <option class="option" value="PENDIENTE">Pendiente</option>
-              <option class="option" value="EN PROCESO">En proceso</option>
-              <option class="option" value="EJECUTADA">Ejecutada</option>
-            </select>
+            <td class="border-b border-[var(--border-subtle)] px-2 py-2">
+              <select
+                class="select w-full h-9 text-[13px]"
+                class:select--error={errors[i]?.estatus}
+                bind:value={accion.estatus}
+              >
+                <option class="option" value="" disabled></option>
+                <option class="option" value="PENDIENTE">Pendiente</option>
+                <option class="option" value="EN PROCESO">En proceso</option>
+                <option class="option" value="EJECUTADA">Ejecutada</option>
+              </select>
               {#if errors[i]?.estatus}
                 <span class="text-[11px] text-[var(--text-error)]">{errors[i].estatus}</span>
               {/if}

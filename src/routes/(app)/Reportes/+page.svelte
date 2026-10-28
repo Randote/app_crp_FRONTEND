@@ -5,6 +5,7 @@ import GraficaDeteccion from '$lib/components/Dashboard/GraficaDeteccion.svelte'
 import TarjetaProceso from '$lib/components/Dashboard/TarjetaProceso.svelte'
 import GraficasporMes from '$lib/components/Dashboard/SelectorYear.svelte'
 import NoConformidades from '$lib/components/Dashboard/NoConformidadesPorProceso.svelte'
+ import GraficaPieAbiertasVencidas from '$lib/components/Dashboard/GraficaPieAbiertasVencidas.svelte';
 
 let {data}= $props()
 </script>
@@ -19,10 +20,25 @@ let {data}= $props()
   <h2 class="flex items-center justify-between text-2xl font-bold text-[var(--text-primary)]">Indicadores de Gestión</h2>
 </div>
 
-<TarjetaProceso procesos={data.procesos} total={data.total} />
 
-<GraficaDeteccion origenes={data.origenes}/>
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+  <GraficaPieAbiertasVencidas
+    abiertas={data.kpis.abiertas}
+    vencidas={data.kpis.vencidas}
+    cerradas={data.kpis.cerradas}
+  />
+  <GraficaDeteccion origenes={data.origenes} />
+</div>
 
-<GraficasporMes {data}/>
 
-<NoConformidades/>
+<div class="mb-6">
+  <GraficasporMes {data} />
+</div>
+
+
+<div class="mb-6">
+  <TarjetaProceso procesos={data.procesos} total={data.total} />
+</div>
+
+
+<NoConformidades />

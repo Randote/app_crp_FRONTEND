@@ -34,7 +34,7 @@ function cambiocargo(cargo) {
         {iniciales(usuario.nombre, usuario.apellido)}
       </div>
 
-      <h2 class="text-base font-bold text-[var(--text-primary)]">
+      <h2 class="text-base font-bold text-[var(--text-primary)] uppercase">
         {usuario.nombre} {usuario.apellido}
       </h2>
       <p class="mt-0.5 text-sm font-medium text-[var(--bg-rojito)]">
@@ -87,12 +87,12 @@ function cambiocargo(cargo) {
 
           <div class="flex flex-col gap-1 rounded-[10px] bg-[var(--bg-input-dis)] px-4 py-3 border border-[var(--border-subtle)]">
             <span class="text-[10px] font-bold tracking-wider text-[var(--text-hint)] uppercase">Usuario de acceso</span>
-            <span class="font-['Fira_Code'] text-sm font-medium text-[var(--text-primary)]">{usuario.usuario}</span>
+            <span class="text-sm font-medium text-[var(--text-primary)]">{usuario.usuario}</span>
           </div>
         </div>
       </div>
  
-      <div class="rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-card)] px-6 py-5">
+      <!-- <div class="rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-card)] px-6 py-5">
         <div class="mb-4 flex items-center justify-between border-b border-[var(--border-subtle)] pb-3">
           <span class="inline-flex items-center gap-1.5 text-[11px] font-bold tracking-wider text-[var(--bg-rojito)] uppercase">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -119,7 +119,7 @@ function cambiocargo(cargo) {
             Este usuario no tiene permisos adicionales asignados.
           </p>
         {/if}
-      </div>
+      </div> -->
 
     </div>
   </div>

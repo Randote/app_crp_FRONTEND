@@ -37,6 +37,36 @@
     'Otro',
   ]
 
+  function obtenerSiglasProceso(procesoTexto) {
+    if (!procesoTexto) return '';
+    const match = procesoTexto.match(/\(([^)]+)\)/);
+    return match ? match[1] : '';
+  }
+
+  const abreviaturasOrigen = {
+    'Auditoria Interna': 'AI',
+    'Auditoria Externa': 'AE',
+    'Quejas y Reclamos': 'QR',
+    'Auditoria Proceso/Producto': 'APP',
+    'Producto no Conforme': 'PNC',
+    'Indicadores': 'IND',
+    'Otro': 'OT'
+  };
+
+
+  $effect(() => {
+    const siglaProceso = obtenerSiglasProceso(form.procesoAfectado);
+    const siglaOrigen = abreviaturasOrigen[form.origenDeteccion] || '';
+
+    if (siglaProceso && siglaOrigen) {
+      const correlativo = form.correlativo || '1'; 
+      
+      form.codificador = `${siglaProceso}-${siglaOrigen}-${correlativo}`;
+    } else {
+      form.codificador = '';
+    }
+  });
+
 
   let {
     form = $bindable({
@@ -62,6 +92,28 @@
   let accionesErrors = $state([]);
   let errors = $state({});
 
+
+$effect(() => {
+    if (form.procesoAfectado && form.origenDeteccion) {
+      const url = `${import.meta.env.VITE_API_URL}/api/acciones-correctivas/siguiente-codificador?proceso=${encodeURIComponent(form.procesoAfectado)}&origen=${encodeURIComponent(form.origenDeteccion)}`;
+
+      fetch(url, {
+        method: 'GET',
+        credentials: 'include'
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.codificador) {
+          form.codificador = data.codificador;
+        }
+      })
+      .catch(err => console.error('Error al obtener el codificador:', err));
+    } else {
+      form.codificador = '';
+    }
+  });
+
+
   export function validarRegistro() {
     errors = {};
     accionesErrors = acciones.map(() => ({}));
@@ -71,38 +123,80 @@
     if (!form.fechaDeteccion) {
       errors.fechaDeteccion = 'La fecha es obligatoria';
       tieneErrores = true;
+    } else {
+      const fechaDet = new Date(form.fechaDeteccion + 'T00:00:00');
+      const hoyFecha = new Date();
+      hoyFecha.setHours(0, 0, 0, 0);
+      if (fechaDet > hoyFecha) {
+        errors.fechaDeteccion = 'La fecha no puede ser futura';
+        tieneErrores = true;
+      }
     }
+
     if (!form.procesoAfectado || form.procesoAfectado.trim().length < 3) {
-      errors.procesoAfectado = 'El proceso debe ser más descriptivo';
+      errors.procesoAfectado = 'Seleccione o escriba un proceso válido';
       tieneErrores = true;
     }
+
     if (!form.dueñoProceso || !form.dueñoProceso.trim()) {
       errors.dueñoProceso = 'El dueño del proceso es obligatorio';
       tieneErrores = true;
     }
 
+    if (!form.origenDeteccion || !form.origenDeteccion.trim()) {
+      errors.origenDeteccion = 'El origen de la detección es obligatorio';
+      tieneErrores = true;
+    }
+
+    if (!form.participantes || !form.participantes.trim()) {
+      errors.participantes = 'Los participantes son obligatorios';
+      tieneErrores = true;
+    }
+
+    if (form.origenDeteccion === 'Otro' && (!form.especificacion || !form.especificacion.trim())) {
+      errors.especificacion = 'Debe especificar el origen';
+      tieneErrores = true;
+    }
+
+    if (!form.problemaDetectado || !form.problemaDetectado.trim()) {
+      errors.problemaDetectado = 'La descripción del problema es obligatoria';
+      tieneErrores = true;
+    }
+
+    if (!form.quéOcurre || !form.quéOcurre.trim()) {
+      errors.quéOcurre = 'Este campo es obligatorio';
+      tieneErrores = true;
+    }
+
+    if (!form.cuandoOcurre || !form.cuandoOcurre.trim()) {
+      errors.cuandoOcurre = 'Este campo es obligatorio';
+      tieneErrores = true;
+    }
+
+    if (!form.dondeOcurre || !form.dondeOcurre.trim()) {
+      errors.dondeOcurre = 'Este campo es obligatorio';
+      tieneErrores = true;
+    }
+
+    // Validación estricta de las acciones inmediatas
     if (acciones.length > 0) {
       for (let i = 0; i < acciones.length; i++) {
         const a = acciones[i];
         const filaErrores = {};
 
-        if (
-          a.accion.trim() ||
-          a.fecha.trim() ||
-          a.responsable.trim() ||
-          a.estatus.trim()
-        ) {
-          if (!a.accion.trim()) filaErrores.accion = 'Requerida';
-          if (!a.fecha.trim()) filaErrores.fecha = 'Requerida';
-          if (!a.responsable.trim()) filaErrores.responsable = 'Requerido';
-          if (!a.estatus.trim()) filaErrores.estatus = 'Requerido';
-        }
+        if (!a.accion || !a.accion.trim()) filaErrores.accion = 'Requerida';
+        if (!a.fecha || !a.fecha.trim()) filaErrores.fecha = 'Requerida';
+        if (!a.responsable || !a.responsable.trim()) filaErrores.responsable = 'Requerido';
+        if (!a.estatus || !a.estatus.trim()) filaErrores.estatus = 'Requerido';
 
         if (Object.keys(filaErrores).length > 0) {
           accionesErrors[i] = filaErrores;
           tieneErrores = true;
         }
       }
+    } else {
+      mostrarNotificacion('Debe agregar al menos una acción inmediata.', 'error');
+      tieneErrores = true;
     }
 
     if (tieneErrores) {
@@ -110,13 +204,8 @@
       return false;
     }
 
-    acciones = acciones.filter(
-      a => a.accion.trim() || a.fecha.trim() || a.responsable.trim() || a.estatus.trim()
-    );
-
     return true;
   }
-
 </script>
 
 <div class="w-full space-y-5 md:space-y-6">
@@ -131,7 +220,7 @@
         </label>
         <input id="codificador" disabled class="input cursor-not-allowed " type="input" bind:value={form.codificador}/>
       </div>
-<!------>
+
       <div class="flex flex-col gap-1.5">
         <label class="text-[13px] font-medium text-[var(--text-secondary)]" for="fechaDeteccion">
           Fecha de Detección <span class="text-[#8B1A2A]">*</span>
@@ -148,7 +237,7 @@
 
       <div class="flex flex-col gap-1.5">
         <label class="text-[13px] font-medium text-[var(--text-secondary)]" for="procesoAfectado">
-          Proceso Afectado
+          Proceso Afectado <span class="text-[#8B1A2A]">*</span>
         </label>
         <ComboBox
           bind:value={form.procesoAfectado}
@@ -183,7 +272,7 @@
 
       <div class="flex flex-col gap-1.5">
         <label class="text-[13px] font-medium text-[var(--text-secondary)]" for="origenDeteccion">
-          Origen de la Detección
+          Origen de la Detección <span class="text-[#8B1A2A]">*</span>
         </label>
         <ComboBox
           bind:value={form.origenDeteccion}
@@ -194,45 +283,51 @@
         <FieldError message={errors.origenDeteccion} />
       </div>
 
-      <div class="flex flex-col gap-1.5 sm:col-span-2">
-        <label class="text-[13px] font-medium text-[var(--text-secondary)]" for="participantes">
-          Participantes
-        </label>
-        <input
-          id="participantes"
-          class="input"
-          type="text"
-          placeholder="Separar con comas"
-          bind:value={form.participantes}
-        />
-      </div>
-
       {#if form.origenDeteccion === 'Otro'}
         <div class="flex flex-col gap-1.5 sm:col-span-2">
           <label class="text-[13px] font-medium text-[var(--text-secondary)]" for="especificacion">
-            Especifique el origen
+            Especifique el origen <span class="text-[#8B1A2A]">*</span>
           </label>
           <input
             id="especificacion"
             class="input"
+            class:input--error={errors.especificacion}
             type="text"
             placeholder="Describir origen"
             bind:value={form.especificacion}
           />
+          <FieldError message={errors.especificacion} />
         </div>
       {/if}
 
+      <div class="flex flex-col gap-1.5 sm:col-span-2">
+        <label class="text-[13px] font-medium text-[var(--text-secondary)]" for="participantes">
+          Participantes <span class="text-[#8B1A2A]">*</span>
+        </label>
+        <input
+          id="participantes"
+          class="input"
+          class:input--error={errors.participantes}
+          type="text"
+          placeholder="Separar con comas"
+          bind:value={form.participantes}
+        />
+        <FieldError message={errors.participantes} />
+      </div>
+
       <div class="flex flex-col gap-2 sm:col-span-2">
         <label class="text-[14px] font-semibold text-[var(--text-primary)]" for="problemaDetectado">
-          Problema Detectado
+          Problema Detectado <span class="text-[#8B1A2A]">*</span>
         </label>
         <textarea
           id="problemaDetectado"
           class="textarea"
+          class:input--error={errors.problemaDetectado}
           rows="4"
           placeholder="Describa brevemente el problema o no conformidad identificada…"
           bind:value={form.problemaDetectado}
         ></textarea>
+        <FieldError message={errors.problemaDetectado} />
       </div>
 
     </div>
@@ -243,30 +338,36 @@
     <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
 
       <div class="flex flex-col gap-2 rounded-[var(--radius-md)] border border-[var(--border-subtle)] bg-[var(--bg-base)] p-4">
-        <span class="text-[11px] font-bold tracking-wider text-[var(--text-hint)] uppercase">¿Qué ocurre?</span>
+        <span class="text-[11px] font-bold tracking-wider text-[var(--text-hint)] uppercase">¿Qué ocurre? <span class="text-[#8B1A2A]">*</span></span>
         <textarea
           class="textarea min-h-[90px] border-none p-0 focus:ring-0"
+          class:input--error={errors.quéOcurre}
           placeholder="Describe el hallazgo…"
           bind:value={form.quéOcurre}
         ></textarea>
+        <FieldError message={errors.quéOcurre} />
       </div>
 
       <div class="flex flex-col gap-2 rounded-[var(--radius-md)] border border-[var(--border-subtle)] bg-[var(--bg-base)] p-4">
-        <span class="text-[11px] font-bold tracking-wider text-[var(--text-hint)] uppercase">¿Cuándo ocurre?</span>
+        <span class="text-[11px] font-bold tracking-wider text-[var(--text-hint)] uppercase">¿Cuándo ocurre? <span class="text-[#8B1A2A]">*</span></span>
         <textarea
           class="textarea min-h-[90px] border-none p-0 focus:ring-0"
+          class:input--error={errors.cuandoOcurre}
           placeholder="Frecuencia o momento…"
           bind:value={form.cuandoOcurre}
         ></textarea>
+        <FieldError message={errors.cuandoOcurre} />
       </div>
 
       <div class="flex flex-col gap-2 rounded-[var(--radius-md)] border border-[var(--border-subtle)] bg-[var(--bg-base)] p-4">
-        <span class="text-[11px] font-bold tracking-wider text-[var(--text-hint)] uppercase">¿Dónde ocurre?</span>
+        <span class="text-[11px] font-bold tracking-wider text-[var(--text-hint)] uppercase">¿Dónde ocurre? <span class="text-[#8B1A2A]">*</span></span>
         <textarea
           class="textarea min-h-[90px] border-none p-0 focus:ring-0"
+          class:input--error={errors.dondeOcurre}
           placeholder="Lugar, línea, equipo…"
           bind:value={form.dondeOcurre}
         ></textarea>
+        <FieldError message={errors.dondeOcurre} />
       </div>
 
     </div>

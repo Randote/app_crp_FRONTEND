@@ -1,4 +1,6 @@
 <script>
+  import FormSection from '$lib/components/FormSection.svelte';
+
   let { procesos = [], total = 0 } = $props();
 
   const SVG_FLAG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 21v-16a1 1 0 0 1 1 -1h6.5a0.5 .5 0 0 1 .5 .5v2h6a1 1 0 0 1 1 1v9a1 1 0 0 1 -1 1h-6.5a0.5 .5 0 0 1 -.5 -.5v-2h-6" /></svg>`;
@@ -61,11 +63,7 @@ const CONFIG_PROCESO = {
     if (pagina < totalPaginas - 1) pagina += 1;
   }
 </script>
-<div class="relative bg-white border border-[#E4DFD6] rounded-[14px] p-5 overflow-hidden">
-  <h3 class="font-[var(--font-ui)] text-lg font-semibold text-[var(--text-primary)] mb-4">
-    Distribución por Proceso Afectado
-  </h3>
-
+<FormSection title="Distribución por Proceso Afectado"> 
   <div class="relative">
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
       {#each procesosVisibles as p}
@@ -145,4 +143,4 @@ const CONFIG_PROCESO = {
       No hay procesos afectados registrados aún.
     </p>
   {/if}
-</div>
+</FormSection> 

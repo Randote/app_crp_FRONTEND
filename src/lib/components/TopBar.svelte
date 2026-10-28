@@ -25,11 +25,14 @@
         {nombreTitulo}
     </h1>
 </div>
-		<div class="ml-auto flex flex-shrink-0 items-center gap-2 md:gap-3">
+		<div class="ml-auto flex flex-shrink-0 items-center gap-2 md:gap-3 justify-between">
 			<a href="{base}" class="cursor-pointer rounded-full bg-[#8B1A2A] px-5 py-2 text-sm font-semibold text-white transition-all hover:bg-[#701420] md:px-7 md:py-2.5 md:text-base">
 				Inicio Sesión
 			</a>
-		</div>
 
+			<a href="{base}/Manual" class="cursor-pointer rounded-full bg-[#8B1A2A] px-5 py-2 text-sm font-semibold text-white transition-all hover:bg-[#701420] md:px-7 md:py-2.5 md:text-base">
+				Manual de llenado
+			</a>
+		</div>
 	</div>
 </div>
