@@ -65,7 +65,7 @@
   }
 
   async function onCambiarPasswordAdmin(payload) {
-    const res = await fetchAutenticador(`/api_crp/api/usuarios/${usuario.id}/password`, {
+    const res = await fetchAutenticado(`/api_crp/api/usuarios/${usuario.id}/password`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json'},
       body: JSON.stringify(payload)
