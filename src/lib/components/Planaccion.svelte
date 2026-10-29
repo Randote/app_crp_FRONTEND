@@ -115,26 +115,50 @@
     validationErrors = {};
     let tieneErrores = false;
 
+    // Obtener la fecha de hoy a las 00:00:00 para comparar correctamente
+    const hoyFecha = new Date();
+    hoyFecha.setHours(0, 0, 0, 0);
+
     for (const grupo of value) {
       for (const accion of grupo.acciones) {
+        // Validar descripción de la acción
         if (!accion.descripcion || !accion.descripcion.trim()) {
           validationErrors[accion.id] = 'La descripción de la acción es obligatoria.';
           tieneErrores = true;
         }
 
-        if (!accion.sinFecha && (!accion.fecha || !accion.fecha.trim())) {
-          validationErrors[`${accion.id}-fecha`] = 'La fecha es obligatoria.';
-          tieneErrores = true;
+        // Validar fecha de la acción
+        if (!accion.sinFecha) {
+          if (!accion.fecha || !accion.fecha.trim()) {
+            validationErrors[`${accion.id}-fecha`] = 'La fecha es obligatoria.';
+            tieneErrores = true;
+          } else {
+            const fechaAccion = new Date(accion.fecha + 'T00:00:00');
+            if (fechaAccion < hoyFecha) {
+              validationErrors[`${accion.id}-fecha`] = 'La fecha no puede ser pasada.';
+              tieneErrores = true;
+            }
+          }
         }
 
+        // Validar descripción de la metodología
         if (!accion.metodologia.descripcion || !accion.metodologia.descripcion.trim()) {
           validationErrors[`${accion.id}-met-desc`] = 'La metodología es obligatoria.';
           tieneErrores = true;
         }
 
-        if (!accion.metodologia.sinFecha && (!accion.metodologia.fecha || !accion.metodologia.fecha.trim())) {
-          validationErrors[`${accion.id}-met-fecha`] = 'La fecha es obligatoria.';
-          tieneErrores = true;
+        // Validar fecha de la metodología
+        if (!accion.metodologia.sinFecha) {
+          if (!accion.metodologia.fecha || !accion.metodologia.fecha.trim()) {
+            validationErrors[`${accion.id}-met-fecha`] = 'La fecha es obligatoria.';
+            tieneErrores = true;
+          } else {
+            const fechaMet = new Date(accion.metodologia.fecha + 'T00:00:00');
+            if (fechaMet < hoyFecha) {
+              validationErrors[`${accion.id}-met-fecha`] = 'La fecha no puede ser pasada.';
+              tieneErrores = true;
+            }
+          }
         }
       }
     }
@@ -259,7 +283,13 @@
               <!-- Columna 3: Fecha Acción -->
               <div class="border-r border-b border-[var(--border-medium)] p-2.5 flex flex-col justify-center gap-1.5" style="grid-row: {filaInicio + ai}; grid-column: 3;">
                 {#if !accion.sinFecha}
-                  <input class="input-date w-full" type="date" bind:value={accion.fecha} />
+                  <input 
+                    class="input-date w-full" 
+                    type="date" 
+                    bind:value={accion.fecha} 
+                    class:input--error={validationErrors[`${accion.id}-fecha`]}
+                  />
+                  <FieldError message={validationErrors[`${accion.id}-fecha`]} />
                 {:else}
                   <input class="input-date opacity-50 bg-stone-100 cursor-not-allowed w-full" type="date" disabled value="" />
                 {/if}
@@ -326,13 +356,21 @@
                   placeholder="Elaborar / Realizar..."
                   rows="4"
                   class="textarea !min-h-[140px] w-full resize-y"
+                  class:input--error={validationErrors[`${accion.id}-met-desc`]}
                 ></textarea>
+                <FieldError message={validationErrors[`${accion.id}-met-desc`]} />
               </div>
 
               <!-- Columna 6: Metodología Fecha -->
               <div class="border-r border-b border-[var(--border-medium)] p-2.5 bg-[#FAFBFB] flex flex-col justify-center gap-1.5" style="grid-row: {filaInicio + ai}; grid-column: 6;">
                 {#if !accion.metodologia.sinFecha}
-                  <input class="input-date w-full" type="date" bind:value={accion.metodologia.fecha} />
+                  <input 
+                    class="input-date w-full" 
+                    type="date" 
+                    bind:value={accion.metodologia.fecha} 
+                    class:input--error={validationErrors[`${accion.id}-met-fecha`]}
+                  />
+                  <FieldError message={validationErrors[`${accion.id}-met-fecha`]} />
                 {:else}
                   <input class="input-date opacity-50 bg-stone-100 cursor-not-allowed w-full" type="date" disabled value="" />
                 {/if}
