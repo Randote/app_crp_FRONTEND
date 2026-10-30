@@ -27,7 +27,7 @@
         usuario.activo = estadoAnterior;
         mostrarNotificacion('No se pudo actualizar el estatus del usuario.', 'error');
       } else {
-        mostrarNotificacion(`Notificaciones para ${usuario.nombre} actualizadas.`, 'success');
+        mostrarNotificacion(`Acceso y notificaciones de ${usuario.nombre} actualizados.`, 'success');
       }
     } catch (err) {
       usuario.activo = estadoAnterior;
@@ -68,8 +68,8 @@
   <!-- Cabecera y Toggle / Pestañas -->
   <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-[#E4DFD6] pb-4">
     <div>
-      <h2 class="font-sans font-bold text-lg text-[#2A2720] m-0">Gestión de Alertas y Correos</h2>
-      <p class="text-xs text-[#6B6560] m-0">Administra qué personal y procesos reciben notificaciones automáticas.</p>
+      <h2 class="font-sans font-bold text-lg text-[#2A2720] m-0">Gestión de Accesos y Alertas</h2>
+      <p class="text-xs text-[#6B6560] m-0">Administra el acceso de los usuarios y qué procesos reciben notificaciones automáticas.</p>
     </div>
 
     <!-- Botones de Toggle -->
@@ -109,7 +109,7 @@
             <th class="py-3 px-4">Nombre y Apellido</th>
             <th class="py-3 px-4">Correo Electrónico</th>
             <th class="py-3 px-4">Cargo</th>
-            <th class="py-3 px-4 text-center">Estatus Correos</th>
+            <th class="py-3 px-4 text-center">Acceso y correos</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-[#E4DFD6]">

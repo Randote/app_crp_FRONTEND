@@ -7,6 +7,10 @@ export default defineConfig({
 	plugins: [tailwindcss(), sveltekit()],
 
 	server: {
+		// En dev el cliente llama a /api_crp (relativo); esto lo manda al backend local.
+		proxy: {
+			'/api_crp': 'http://127.0.0.1:8001'
+		},
 		watch: {
 			awaitWriteFinish: {
 				stabilityThreshold: 500,

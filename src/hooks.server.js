@@ -1,6 +1,9 @@
-const BACKEND_URL = 'http://10.10.0.32/api_crp';
+import { env } from '$env/dynamic/private';
 
 export async function handle({ event, resolve }) {
+    // Mismo origen = nginx de este servidor; BACKEND_URL (opcional) lo sobrescribe.
+    const backendUrl = env.BACKEND_URL ?? `${event.url.origin}/api_crp`;
+
     if (
         event.url.pathname.startsWith('/_app/') ||
         event.url.pathname.match(/\.(js|css|png|jpg|jpeg|svg|ico|woff2?|map)$/)
@@ -14,7 +17,7 @@ export async function handle({ event, resolve }) {
     event.locals.user = null;
 
     if (accessToken) {
-        const user = await verificarToken(accessToken);
+        const user = await verificarToken(accessToken, backendUrl);
         if (user) {
             event.locals.user = user;
             return resolve(event);
@@ -22,7 +25,7 @@ export async function handle({ event, resolve }) {
     }
 
     if (refreshTokenCookie) {
-        const nuevoAccessToken = await refrescarToken(event);
+        const nuevoAccessToken = await refrescarToken(event, backendUrl);
         if (nuevoAccessToken) {
             event.cookies.set('access_token', nuevoAccessToken, {
                 path: '/',
@@ -31,19 +34,19 @@ export async function handle({ event, resolve }) {
                 secure: false,
                 maxAge: 60 * 10
             });
-            event.locals.user = await verificarToken(nuevoAccessToken);
+            event.locals.user = await verificarToken(nuevoAccessToken, backendUrl);
         }
     }
 
     return resolve(event);
 }
 
-async function verificarToken(token) {
+async function verificarToken(token, backendUrl) {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 5000);
 
     try {
-        const res = await fetch(`${BACKEND_URL}/api/auth/me`, {
+        const res = await fetch(`${backendUrl}/api/auth/me`, {
             headers: { Authorization: `Bearer ${token}` },
             signal: controller.signal
         });
@@ -56,12 +59,12 @@ async function verificarToken(token) {
     }
 }
 
-async function refrescarToken(event) {
+async function refrescarToken(event, backendUrl) {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 5000);
 
     try {
-        const res = await fetch(`${BACKEND_URL}/api/auth/refresh`, {
+        const res = await fetch(`${backendUrl}/api/auth/refresh`, {
             method: 'POST',
             headers: { Cookie: `refresh_token=${event.cookies.get('refresh_token')}` },
             signal: controller.signal

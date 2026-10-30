@@ -30,6 +30,7 @@ async function refrescarToken() {
 		credentials: 'include' // el navegador manda el refresh_token solo
 	});
 	if (!res.ok) {
+		if (await sesionInactiva(res)) await expulsarPorInactividad();
 		console.log('[auth] refresh FALLÓ — refresh_token inválido o expirado', res.status);
 		return null;
 	}
@@ -45,6 +46,25 @@ async function refrescarToken() {
 	);
 
 	return data.access_token;
+}
+
+async function sesionInactiva(res) {
+	if (res.status !== 403) return false;
+	try {
+		const data = await res.clone().json();
+		return /inactiva/i.test(data?.detail ?? '');
+	} catch {
+		return false;
+	}
+}
+
+async function expulsarPorInactividad() {
+	await fetch('/api_crp/api/auth/logout', { method: 'POST', credentials: 'include' }).catch(() => {});
+	document.cookie = 'access_token=; path=/; max-age=0; samesite=lax';
+	localStorage.removeItem('token');
+	localStorage.removeItem('usuario');
+	localStorage.removeItem('refresh_token');
+	window.location.href = '/app_crp/';
 }
 
 /**
@@ -69,6 +89,12 @@ export async function fetchAutenticado(url, options = {}) {
 		token = await refrescarToken();
 		if (!token) throw new Error('SESION_EXPIRADA'); // acá sí mandas a /login
 		res = await hacer(token);
+	}
+
+	// Cuenta desactivada por un admin: logout y patada al login en el acto.
+	if (await sesionInactiva(res)) {
+		await expulsarPorInactividad();
+		throw new Error('SESION_EXPIRADA');
 	}
 
 	return res;

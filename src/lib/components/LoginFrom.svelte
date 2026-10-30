@@ -23,6 +23,17 @@ import cpIcon from '$lib/assets/crp_logo_icon.svg';
     return !errors.username && !errors.password;
   }
 
+  async function limpiarSesionAnterior() {
+    // Si el login falla no debe quedar viva la sesión del usuario anterior.
+    await fetch(`${import.meta.env.VITE_API_URL}/api/auth/logout`, {
+      method: 'POST',
+      credentials: 'include'
+    }).catch(() => {});
+    document.cookie = 'access_token=; path=/; max-age=0; samesite=lax';
+    localStorage.removeItem('token');
+    localStorage.removeItem('usuario');
+  }
+
   async function handleLogin(e) {
     e.preventDefault();
     if (!validate()) return;
@@ -55,6 +66,7 @@ import cpIcon from '$lib/assets/crp_logo_icon.svg';
       goto(redirectTo ? redirectTo : `${base}/Inicio`);
 
     } catch (err) {
+      await limpiarSesionAnterior();
       mostrarNotificacion(err.message, 'error');
     } finally {
       loading = false;
